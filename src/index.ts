@@ -1,22 +1,14 @@
 import { graphql } from "graphql";
-import { createSchema } from "graphql-yoga";
+import { createSchema, createYoga } from "graphql-yoga";
+import { createServer } from "node:http";
+import fs from "node:fs";
+import path from "node:path";
+import { Resolvers } from "./__generated__/typeDefs";
 
-const typeDefs = `
-  type Query {
-    getBook(id: ID!): Book!
-  }
-
-  type Book {
-    id: ID!
-    title: String!
-    author: Author!
-  }
-
-  type Author {
-    id: ID!
-    name: String!
-  }
-`;
+const typeDefs = fs.readFileSync(
+  path.resolve("./src/typeDefs.graphql"),
+  "utf8"
+);
 
 const booksDb = [
   {
@@ -28,13 +20,13 @@ const booksDb = [
 
 const authorDb = [{ id: "1", name: "morri" }];
 
-const resolvers = {
+const resolvers: Resolvers = {
   Query: {
     async getBook(parent, args, ctx) {
       //const book=await db.books.findOne({id: args.id})
       //return book
 
-      return booksDb.find((book) => book.id === args.id);
+      return booksDb.find((book) => book.id === args.id)!;
     },
   },
   Book: {
@@ -46,7 +38,7 @@ const resolvers = {
       return parent.title;
     },
     author(parent, args, ctx) {
-      const author = authorDb.find((author) => author.id === parent.authorId);
+      const author = authorDb.find((author) => author.id === parent.authorId)!;
       return author;
     },
   },
@@ -57,6 +49,13 @@ const resolvers = {
 const schema = createSchema({
   typeDefs,
   resolvers,
+});
+
+const yoga = createYoga({ schema });
+const server = createServer(yoga);
+
+server.listen(4000, () => {
+  console.info("server is running");
 });
 
 (async () => {
