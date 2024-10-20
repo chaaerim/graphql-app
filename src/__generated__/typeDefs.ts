@@ -33,6 +33,7 @@ export type Book = {
 
 export type Query = {
   __typename?: 'Query';
+  allBooks: Array<Book>;
   getBook: Book;
 };
 
@@ -144,6 +145,7 @@ export type BookResolvers<ContextType = any, ParentType extends ResolversParentT
 };
 
 export type QueryResolvers<ContextType = any, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
+  allBooks?: Resolver<Array<ResolversTypes['Book']>, ParentType, ContextType>;
   getBook?: Resolver<ResolversTypes['Book'], ParentType, ContextType, RequireFields<QueryGetBookArgs, 'id'>>;
 };
 

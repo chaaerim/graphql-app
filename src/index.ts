@@ -4,6 +4,8 @@ import { createServer } from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { Resolvers } from "./__generated__/typeDefs";
+import DataLoader from "dataloader";
+import { Author } from "./Author";
 
 const typeDefs = fs.readFileSync(
   path.resolve("./src/typeDefs.graphql"),
@@ -16,9 +18,23 @@ const booksDb = [
     title: "Hello",
     authorId: "1",
   },
+  {
+    id: "2",
+    title: "Hello",
+    authorId: "2",
+  },
+  {
+    id: "3",
+    title: "Hello",
+    authorId: "3",
+  },
 ];
 
-const authorDb = [{ id: "1", name: "morri" }];
+const authorDb = [
+  { id: "1", name: "morri" },
+  { id: "2", name: "sonny" },
+  { id: "3", name: "tonny" },
+];
 
 const resolvers: Resolvers = {
   Query: {
@@ -27,6 +43,9 @@ const resolvers: Resolvers = {
       //return book
 
       return booksDb.find((book) => book.id === args.id)!;
+    },
+    async allBooks(parent, args, ctx) {
+      return booksDb;
     },
   },
   Book: {
@@ -38,8 +57,9 @@ const resolvers: Resolvers = {
       return parent.title;
     },
     author(parent, args, ctx) {
-      const author = authorDb.find((author) => author.id === parent.authorId)!;
-      return author;
+      console.log(ctx);
+      console.log(parent);
+      return ctx.authorLoader.load(parent.authorId);
     },
   },
 
@@ -51,28 +71,41 @@ const schema = createSchema({
   resolvers,
 });
 
-const yoga = createYoga({ schema });
+const yoga = createYoga({
+  schema,
+  context() {
+    return {
+      authorLoader: new DataLoader<string, Author>(async (ids) => {
+        const author = ids.map((id) => {
+          return authorDb.find((author) => author.id === id)!;
+        });
+        // console.log(author);
+        return author;
+      }),
+    };
+  },
+});
 const server = createServer(yoga);
 
 server.listen(4000, () => {
   console.info("server is running");
 });
 
-(async () => {
-  const res = await graphql({
-    schema,
-    source: `
-            query{
-                getBook(id: "1"){
-                    id
-                    title
-                    author{
-                        name
-                    }
-                }
-            }
-        `,
-  });
+// (async () => {
+//   const res = await graphql({
+//     schema,
+//     source: `
+//             query{
+//                 getBook(id: "1"){
+//                     id
+//                     title
+//                     author{
+//                         name
+//                     }
+//                 }
+//             }
+//         `,
+//   });
 
-  console.log(JSON.stringify(res, null, 2));
-})();
+//   console.log(JSON.stringify(res, null, 2));
+// })();

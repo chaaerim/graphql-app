@@ -1,5 +1,6 @@
 type Query {
   getBook(id: ID!): Book!
+  allBooks: [Book!]!
 }
 
 type Book {
